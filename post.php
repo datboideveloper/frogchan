@@ -241,7 +241,7 @@ if (isset($_POST['delete'])) {
 			} else {
 				// Delete entire post
 				deletePost($id);
-				modLog("User deleted his own post #$id");
+				modLog("User deleted their own post #$id");
 			}
 
 			_syslog(LOG_INFO, 'Deleted post: ' .
