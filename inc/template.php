@@ -58,7 +58,7 @@ function Element($templateFile, array $options) {
 	}
 	
 	// Read the template file
-	if (@file_get_contents("{$config['dir']['template']}/${templateFile}")) {
+	if (@file_get_contents("{$config['dir']['template']}/{$templateFile}")) {
 		$body = $twig->render($templateFile, $options);
 		
 		if ($config['minify_html'] && preg_match('/\.html$/', $templateFile)) {
@@ -67,7 +67,7 @@ function Element($templateFile, array $options) {
 		
 		return $body;
 	} else {
-		throw new Exception("Template file '${templateFile}' does not exist or is empty in '{$config['dir']['template']}'!");
+		throw new Exception("Template file '{$templateFile}' does not exist or is empty in '{$config['dir']['template']}'!");
 	}
 }
 
@@ -134,17 +134,13 @@ class Tinyboard extends Twig\Extension\AbstractExtension
 	}
 }
 
-function twig_timezone_function() {
-	return 'Z';
-}
-
 function twig_push_filter($array, $value) {
 	array_push($array, $value);
 	return $array;
 }
 
 function twig_date_filter($date, $format) {
-	return gmstrftime($format, $date);
+	return gmdate($format, $date);
 }
 
 function twig_hasPermission_filter($mod, $permission, $board = null) {

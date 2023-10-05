@@ -565,10 +565,7 @@ if (isset($_POST['delete'])) {
 			error($config['error']['unknownext']);
 
 		$post['file_tmp'] = tempnam($config['tmp'], 'url');
-		function unlink_tmp_file($file) {
-			@unlink($file);
-			fatal_error_handler();
-		}
+
 		register_shutdown_function('unlink_tmp_file', $post['file_tmp']);
 		
 		$fp = fopen($post['file_tmp'], 'w');
@@ -893,7 +890,7 @@ if (isset($_POST['delete'])) {
 		if ($file['is_an_image']) {
 			if ($config['ie_mime_type_detection'] !== false) {
 				// Check IE MIME type detection XSS exploit
-				$buffer = file_get_contents($upload, null, null, null, 255);
+				$buffer = file_get_contents($upload, false, null, 0, 255);
 				if (preg_match($config['ie_mime_type_detection'], $buffer)) {
 					undoImage($post);
 					error($config['error']['mime_exploit']);
@@ -913,7 +910,8 @@ if (isset($_POST['delete'])) {
 				error($config['error']['maxsize']);
 			}
 			
-			
+			$file['exif_stripped'] = false;
+
 			if ($config['convert_auto_orient'] && ($file['extension'] == 'jpg' || $file['extension'] == 'jpeg')) {
 				// The following code corrects the image orientation.
 				// Currently only works with the 'convert' option selected but it could easily be expanded to work with the rest if you can be bothered.
@@ -996,7 +994,7 @@ if (isset($_POST['delete'])) {
 
 			$dont_copy_file = false;
 			
-			if ($config['redraw_image'] || (!@$file['exif_stripped'] && $config['strip_exif'] && ($file['extension'] == 'jpg' || $file['extension'] == 'jpeg'))) {
+			if ($config['redraw_image'] || (!$file['exif_stripped'] && $config['strip_exif'] && ($file['extension'] == 'jpg' || $file['extension'] == 'jpeg'))) {
 				if (!$config['redraw_image'] && $config['use_exiftool']) {
 					if($error = shell_exec_error('exiftool -overwrite_original -ignoreMinorErrors -q -q -all= ' .
 						escapeshellarg($file['tmp_name'])))
@@ -1037,10 +1035,12 @@ if (isset($_POST['delete'])) {
                                                           'tesseract stdin '.escapeshellarg($tmpname).' '.$config['tesseract_params']);
 				$tmpname .= ".txt";
 
-				$value = @file_get_contents($tmpname);
-				@unlink($tmpname);
+				if(file_exists($tmpname)) {
+					$value = file_get_contents($tmpname);
+					unlink($tmpname);
+				}
 
-				if ($value && trim($value)) {
+				if (isset($value) && $value && trim($value)) {
 					// This one has an effect, that the body is appended to a post body. So you can write a correct
 					// spamfilter.
 					$post['body_nomarkup'] .= "<tinyboard ocr image $key>".htmlspecialchars($value)."</tinyboard>";
@@ -1049,11 +1049,11 @@ if (isset($_POST['delete'])) {
 		}
 		
 		if (!$dont_copy_file) {
-			if (isset($file['file_tmp'])) {
-				if (!@rename($file['tmp_name'], $file['file']))
+			if (isset($file['file_tmp']) && file_exists($file['tmp_name'])) {
+				if (!rename($file['tmp_name'], $file['file']))
 					error($config['error']['nomove']);
 				chmod($file['file'], 0644);
-			} elseif (!@move_uploaded_file($file['tmp_name'], $file['file']))
+			} elseif (!move_uploaded_file($file['tmp_name'], $file['file']))
 				error($config['error']['nomove']);
 			}
 		}
@@ -1205,7 +1205,14 @@ if (isset($_POST['delete'])) {
 		// Tell it to delete the cached post for referer
 		$js->{$_SERVER['HTTP_REFERER']} = true;
 		// Encode and set cookie
-		setcookie($config['cookies']['js'], json_encode($js), 0, $config['cookies']['jail'] ? $config['cookies']['path'] : '/', null, false, false);
+		setcookie($config['cookies']['js'], json_encode($js), [
+			'expires' => 0,
+			'path' => $config['cookies']['jail'] ? $config['cookies']['path'] : '/',
+			'domain' => null,
+			'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] != 'off',
+			'httponly' => false,
+			'samesite' => 'Strict'
+		]);
 	}
 	
 	$root = $post['mod'] ? $config['root'] . $config['file_mod'] . '?/' : $config['root'];

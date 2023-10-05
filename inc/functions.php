@@ -117,7 +117,7 @@ function loadConfig() {
 		// So, we may store the locale in a tmp/ filesystem.
 
 		if (file_exists($fn = 'tmp/cache/locale_' . $boardsuffix ) ) {
-			$config['locale'] = @file_get_contents($fn);
+			$config['locale'] = file_get_contents($fn);
 		}
 		else {
 			$config['locale'] = 'en';
@@ -689,7 +689,8 @@ function file_write($path, $data, $simple = false, $skip_purge = false) {
 			//	error("Unable to touch file: $gzpath");
 		}
 		else {
-			@unlink($gzpath);
+			if(file_exists($gzpath))
+				unlink($gzpath);
 		}
 	}
 
@@ -724,13 +725,13 @@ function file_unlink($path) {
 		$debug['unlink'][] = $path;
 	}
 
-	$ret = @unlink($path);
-
-        if ($config['gzip_static']) {
-                $gzpath = "$path.gz";
-
-		@unlink($gzpath);
+	$ret = false;
+	if(file_exists($path)){
+		$ret = unlink($path);
 	}
+
+	if ($config['gzip_static'] && file_exists($gzpath = "$path.gz"))
+		unlink($gzpath);
 
 	if (isset($config['purge']) && $path[0] != '/' && isset($_SERVER['HTTP_HOST'])) {
 		// Purge cache
@@ -1620,7 +1621,7 @@ function checkMute() {
 
 	if ($config['cache']['enabled']) {
 		// Cached mute?
-		if (($mute = cache::get("mute_${_SERVER['REMOTE_ADDR']}")) && ($mutetime = cache::get("mutetime_${_SERVER['REMOTE_ADDR']}"))) {
+		if (($mute = cache::get("mute_{$_SERVER['REMOTE_ADDR']}")) && ($mutetime = cache::get("mutetime_{$_SERVER['REMOTE_ADDR']}"))) {
 			error(sprintf($config['error']['youaremuted'], $mute['time'] + $mutetime - time()));
 		}
 	}
@@ -1639,8 +1640,8 @@ function checkMute() {
 
 		if ($mute['time'] + $mutetime > time()) {
 			if ($config['cache']['enabled']) {
-				cache::set("mute_${_SERVER['REMOTE_ADDR']}", $mute, $mute['time'] + $mutetime - time());
-				cache::set("mutetime_${_SERVER['REMOTE_ADDR']}", $mutetime, $mute['time'] + $mutetime - time());
+				cache::set("mute_{$_SERVER['REMOTE_ADDR']}", $mute, $mute['time'] + $mutetime - time());
+				cache::set("mutetime_{$_SERVER['REMOTE_ADDR']}", $mutetime, $mute['time'] + $mutetime - time());
 			}
 			// Not expired yet
 			error(sprintf($config['error']['youaremuted'], $mute['time'] + $mutetime - time()));
@@ -2289,6 +2290,7 @@ function escape_markup_modifiers($string) {
 }
 
 function defined_flags_accumulate($desired_flags) {
+	global $config;
 	$output_flags = 0x0;
 	foreach ($desired_flags as $flagname) {
 		if (defined($flagname)) {
@@ -2306,7 +2308,7 @@ function defined_flags_accumulate($desired_flags) {
 
 function utf8tohtml($utf8) {
 	$flags = defined_flags_accumulate(['ENT_NOQUOTES', 'ENT_SUBSTITUTE', 'ENT_DISALLOWED']);
-	return htmlspecialchars($utf8, $flags, 'UTF-8');
+	return htmlspecialchars($utf8 ?? '', $flags, 'UTF-8');
 }
 
 function ordutf8($string, &$offset) {
@@ -3078,5 +3080,12 @@ function check_thread_limit($post) {
 		$r = $query->fetch(PDO::FETCH_ASSOC);
 
 		return $r['count'] >= $config['max_threads_per_hour'];
+	}
+}
+
+function unlink_tmp_file($file) {
+	if(file_exists($file)) {
+		unlink($file);
+		fatal_error_handler();
 	}
 }
