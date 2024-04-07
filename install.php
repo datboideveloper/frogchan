@@ -68,11 +68,7 @@ if (file_exists($config['has_installed'])) {
 	function __query($sql) {
 		sql_open();
 
-		if (mysql_version() >= 50503)
-			return query($sql);
-		else
 			return query(str_replace('utf8mb4', 'utf8', $sql));
-	}
 
 	$boards = listBoards();
 
