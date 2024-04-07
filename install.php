@@ -985,8 +985,6 @@ if ($step == 0) {
 
 	$sql_errors = '';
 	foreach ($queries as $query) {
-		if ($mysql_version < 50503)
-			$query = preg_replace('/(CHARSET=|CHARACTER SET )utf8mb4/', '$1utf8', $query);
 		$query = preg_replace('/^([\w\s]*)`([0-9a-zA-Z$_\x{0080}-\x{FFFF}]+)`/u', '$1``$2``', $query);
 		if (!query($query))
 			$sql_errors .= '<li>' . db_error() . '</li>';
