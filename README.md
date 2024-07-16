@@ -6,7 +6,7 @@ IT IS A FORK OF VICHAN THAT IS TO BE SECURED WITH WEB3.
 
 About
 ------------
-Chans are infested with evil and under constant attack. They have become unusable. Our goal is to replace current security mechanisms used by imageboards (captcha, fiat payment, IP tracking) with a much simpler, and much more effective system based off of using EVM smart contracts for user authentication. State actors have involved themselves in spamming imageboards, along with hordes of mentally ill individuals influenced by state and corporate propaganda. Conventional techniques for controlling spam simply will not work, for various reasons beyond the scope of this readme, something different needs to be done.
+Chans are infested with terrible people and under constant attack. They have become unusable. Our goal is to replace current security mechanisms used by imageboards (captcha, fiat payment, IP tracking) with a much simpler, and much more effective system based off of using EVM smart contracts for user authentication. State actors have involved themselves in spamming imageboards, along with hordes of mentally ill individuals influenced by state and corporate propaganda. Conventional techniques for controlling spam simply will not work, for various reasons beyond the scope of this readme, something different needs to be done.
 
 The security built into Ethereum is world class, battle hardened and practically impossible to compromise. It protects billions of dollars worth of financial assets. We are going to leverage that to protect an imageboard from spam, this will allow us to run the site with a small team of paid moderators and no "jannies" at all. 
 
